@@ -1,0 +1,6 @@
+{
+  "name": "Microsoft Store",
+  "description": "A modern Microsoft Store e-commerce experience to discover apps, games, Surface devices, Xbox consoles, accessories, and digital entertainment.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
