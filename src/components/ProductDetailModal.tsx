@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   X, 
   Star, 
@@ -14,7 +15,13 @@ import {
   Sparkles, 
   Download, 
   MessageSquarePlus,
-  ArrowRight
+  ArrowRight,
+  ThumbsUp,
+  Monitor,
+  Zap,
+  Package,
+  Layers,
+  Plus
 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { Product, ProductVariant, ProductReview } from '../types';
@@ -42,7 +49,7 @@ export const ProductDetailModal: React.FC = () => {
     selectedProduct.storageVariants ? selectedProduct.storageVariants[0] : undefined
   );
   const [quantity, setQuantity] = useState(1);
-  const [activeTab, setActiveTab] = useState<'features' | 'specs' | 'reviews' | 'included'>('features');
+  const [activeTab, setActiveTab] = useState<'features' | 'specs' | 'requirements' | 'reviews' | 'included'>('features');
 
   // Handle ESC key to close modal
   useEffect(() => {
@@ -62,6 +69,7 @@ export const ProductDetailModal: React.FC = () => {
   const [newReviewRating, setNewReviewRating] = useState(5);
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [localReviews, setLocalReviews] = useState<ProductReview[]>(selectedProduct.reviews || []);
+  const [helpfulVotes, setHelpfulVotes] = useState<Record<string, number>>({});
 
   const isWishlisted = isInWishlist(selectedProduct.id);
 
@@ -123,45 +131,64 @@ export const ProductDetailModal: React.FC = () => {
     addToast('Review Submitted', 'Thank you for your feedback! Your review is now live.', 'success');
   };
 
+  const handleVoteHelpful = (reviewId: string) => {
+    setHelpfulVotes(prev => ({
+      ...prev,
+      [reviewId]: (prev[reviewId] || 0) + 1
+    }));
+    addToast('Helpful Vote', 'Thank you for your feedback.', 'info');
+  };
+
   // Related products from same category
   const relatedProducts = products
     .filter(p => p.category === selectedProduct.category && p.id !== selectedProduct.id)
     .slice(0, 3);
 
+  // Bundle product
+  const bundleAddon = products.find(p => p.category === 'accessories' && p.id !== selectedProduct.id) || products[1];
+
+  const handleAddBundle = () => {
+    addToCart(selectedProduct, { quantity: 1, color: selectedColor, storage: selectedStorage });
+    if (bundleAddon) {
+      addToCart(bundleAddon, { quantity: 1 });
+    }
+    addToast('Bundle Added', 'Added product bundle to cart with bundle savings!', 'success');
+  };
+
   return (
     <div 
       id="product-detail-modal-overlay"
-      className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 md:p-6 animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 overflow-y-auto bg-black/60 dark:bg-black/80 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 md:p-6 animate-in fade-in duration-200"
       onClick={() => setSelectedProduct(null)}
     >
       <div 
         id="product-detail-modal-container"
-        className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-xl border border-neutral-200 relative flex flex-col"
+        className="bg-white dark:bg-[#1f1f1f] text-neutral-900 dark:text-neutral-100 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-neutral-200 dark:border-neutral-700/80 relative flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         
-        {/* Sticky Header with Close Button */}
-        <div className="sticky top-0 bg-white/95 backdrop-blur-md px-4 py-2.5 border-b border-neutral-200 flex items-center justify-between z-20">
-          <div className="flex items-center gap-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#0067b8]">
-              {selectedProduct.subcategory}
+        {/* Sticky Header with Breadcrumb & Close Button */}
+        <div className="sticky top-0 bg-white/95 dark:bg-[#1f1f1f]/95 backdrop-blur-md px-4 sm:px-6 py-3 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between z-20">
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#0067b8] dark:text-[#60cdff]">
+              {selectedProduct.category}
             </span>
-            <span className="text-neutral-300">•</span>
-            <span className="text-xs text-neutral-500">{selectedProduct.developer || 'Microsoft'}</span>
+            <span className="text-neutral-300 dark:text-neutral-600">/</span>
+            <span className="text-xs font-semibold text-neutral-600 dark:text-neutral-400">{selectedProduct.subcategory}</span>
           </div>
 
           <div className="flex items-center gap-1.5">
             <button
               onClick={handleShare}
-              className="p-1.5 rounded-md text-neutral-500 hover:text-neutral-800 hover:bg-neutral-100 transition-colors"
+              className="p-2 rounded-lg text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
               title="Share product"
             >
-              <Share2 className="w-3.5 h-3.5" />
+              <Share2 className="w-4 h-4" />
             </button>
             <button
               id="close-product-modal-button"
               onClick={() => setSelectedProduct(null)}
-              className="p-1.5 rounded-md text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 transition-colors cursor-pointer"
+              className="p-2 rounded-lg text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
               aria-label="Close modal"
             >
               <X className="w-4 h-4" />
@@ -170,32 +197,33 @@ export const ProductDetailModal: React.FC = () => {
         </div>
 
         {/* Modal Main Body */}
-        <div className="p-4 sm:p-5 space-y-5 flex-1">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        <div className="p-4 sm:p-6 space-y-6 flex-1">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             
             {/* Left Image Gallery (6 cols) */}
             <div className="lg:col-span-6 space-y-3">
               {/* Main Image View */}
-              <div className="relative aspect-4/3 rounded-lg overflow-hidden bg-neutral-100 border border-neutral-200 shadow-2xs flex items-center justify-center">
+              <div className="relative aspect-4/3 rounded-xl overflow-hidden bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 shadow-xs flex items-center justify-center">
                 <img
                   src={images[activeImageIndex] || selectedProduct.image}
                   alt={selectedProduct.title}
                   className="w-full h-full object-cover transition-all duration-300"
                   referrerPolicy="no-referrer"
-                  onError={(e) => {
-                    const target = e.currentTarget;
-                    if (!target.src.includes('unsplash.com/photo-1611339555312-e607c8352fd7')) {
-                      target.src = 'https://images.unsplash.com/photo-1611339555312-e607c8352fd7?w=900&auto=format&fit=crop&q=80';
-                    }
-                  }}
                 />
-                {selectedProduct.badge && (
-                  <span className="absolute top-2.5 left-2.5 bg-[#0067b8] text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-2xs uppercase tracking-wider">
-                    {selectedProduct.badge}
-                  </span>
-                )}
+                <div className="absolute top-3 left-3 flex flex-col gap-1.5 items-start">
+                  {selectedProduct.badge && (
+                    <span className="bg-[#0067b8] text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-xs uppercase tracking-wider">
+                      {selectedProduct.badge}
+                    </span>
+                  )}
+                  {selectedProduct.gamePassIncluded && (
+                    <span className="bg-[#107c41] text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-xs">
+                      Game Pass Included
+                    </span>
+                  )}
+                </div>
                 {selectedProduct.discountPercent && selectedProduct.discountPercent > 0 && (
-                  <span className="absolute top-2.5 right-2.5 bg-rose-600 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-2xs">
+                  <span className="absolute top-3 right-3 bg-rose-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-xs">
                     Save {selectedProduct.discountPercent}%
                   </span>
                 )}
@@ -203,15 +231,15 @@ export const ProductDetailModal: React.FC = () => {
 
               {/* Gallery Thumbnails */}
               {images.length > 1 && (
-                <div className="flex items-center gap-2 overflow-x-auto pb-0.5">
+                <div className="flex items-center gap-2 overflow-x-auto pb-1">
                   {images.map((img, idx) => (
                     <button
                       key={idx}
                       onClick={() => setActiveImageIndex(idx)}
-                      className={`relative w-12 h-12 rounded-md overflow-hidden border transition-all cursor-pointer ${
+                      className={`relative w-14 h-14 rounded-lg overflow-hidden border-2 transition-all cursor-pointer ${
                         activeImageIndex === idx
-                          ? 'border-[#0067b8] ring-1 ring-[#0067b8]/30'
-                          : 'border-neutral-200 opacity-70 hover:opacity-100'
+                          ? 'border-[#0067b8] dark:border-[#60cdff] ring-2 ring-[#0067b8]/20'
+                          : 'border-neutral-200 dark:border-neutral-700 opacity-70 hover:opacity-100'
                       }`}
                     >
                       <img src={img} alt={`Thumb ${idx}`} className="w-full h-full object-cover" />
@@ -221,18 +249,18 @@ export const ProductDetailModal: React.FC = () => {
               )}
 
               {/* Guarantees Badges */}
-              <div className="grid grid-cols-3 gap-1.5 pt-1 text-center text-[11px] text-neutral-600 font-medium">
-                <div className="p-1.5 bg-neutral-50 rounded-md border border-neutral-200 flex flex-col items-center gap-0.5">
-                  <Truck className="w-3.5 h-3.5 text-[#0067b8]" />
-                  <span>Free 2-3 Day Shipping</span>
+              <div className="grid grid-cols-3 gap-2 pt-1 text-center text-[11px] text-neutral-600 dark:text-neutral-300 font-medium">
+                <div className="p-2 bg-neutral-50 dark:bg-neutral-800/80 rounded-xl border border-neutral-200 dark:border-neutral-700 flex flex-col items-center gap-1">
+                  <Truck className="w-4 h-4 text-[#0067b8] dark:text-[#60cdff]" />
+                  <span>Free 2-3 Day Delivery</span>
                 </div>
-                <div className="p-1.5 bg-neutral-50 rounded-md border border-neutral-200 flex flex-col items-center gap-0.5">
-                  <RotateCcw className="w-3.5 h-3.5 text-[#0067b8]" />
+                <div className="p-2 bg-neutral-50 dark:bg-neutral-800/80 rounded-xl border border-neutral-200 dark:border-neutral-700 flex flex-col items-center gap-1">
+                  <RotateCcw className="w-4 h-4 text-[#0067b8] dark:text-[#60cdff]" />
                   <span>60-Day Returns</span>
                 </div>
-                <div className="p-1.5 bg-neutral-50 rounded-md border border-neutral-200 flex flex-col items-center gap-0.5">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>1-Year Warranty</span>
+                <div className="p-2 bg-neutral-50 dark:bg-neutral-800/80 rounded-xl border border-neutral-200 dark:border-neutral-700 flex flex-col items-center gap-1">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  <span>Microsoft Direct Support</span>
                 </div>
               </div>
             </div>
@@ -242,15 +270,21 @@ export const ProductDetailModal: React.FC = () => {
               
               {/* Title & Ratings */}
               <div>
-                <h1 className="text-xl sm:text-2xl font-bold text-neutral-900 leading-tight">
+                <div className="flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400 mb-1">
+                  <span className="text-[#0067b8] dark:text-[#60cdff] font-bold uppercase">{selectedProduct.developer || 'Microsoft Corporation'}</span>
+                  <span>•</span>
+                  <span>Direct from Microsoft</span>
+                </div>
+
+                <h1 className="text-xl sm:text-2xl font-black text-neutral-900 dark:text-white leading-tight">
                   {selectedProduct.title}
                 </h1>
-                <p className="text-xs text-neutral-600 mt-1 leading-relaxed">
+                <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-300 mt-1.5 leading-relaxed">
                   {selectedProduct.tagline || selectedProduct.description}
                 </p>
 
                 {/* Rating & Reviews Bar */}
-                <div className="flex items-center gap-2 mt-2">
+                <div className="flex items-center gap-2 mt-2.5">
                   <div className="flex items-center text-amber-400">
                     {[1, 2, 3, 4, 5].map((i) => (
                       <Star
@@ -258,61 +292,61 @@ export const ProductDetailModal: React.FC = () => {
                         className={`w-3.5 h-3.5 ${
                           i <= Math.round(selectedProduct.rating)
                             ? 'fill-amber-400 text-amber-400'
-                            : 'text-neutral-300'
+                            : 'text-neutral-300 dark:text-neutral-600'
                         }`}
                       />
                     ))}
                   </div>
-                  <span className="text-xs font-bold text-neutral-800">
+                  <span className="text-xs font-bold text-neutral-900 dark:text-white">
                     {selectedProduct.rating.toFixed(1)}
                   </span>
-                  <span className="text-[11px] text-neutral-400">
-                    ({selectedProduct.reviewCount.toLocaleString()} ratings)
+                  <span className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                    ({selectedProduct.reviewCount.toLocaleString()} ratings & reviews)
                   </span>
                 </div>
               </div>
 
               {/* Price Display */}
-              <div className="p-3 bg-neutral-50 rounded-lg border border-neutral-200">
+              <div className="p-3.5 bg-neutral-50 dark:bg-neutral-800/80 rounded-xl border border-neutral-200 dark:border-neutral-700">
                 <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-extrabold text-neutral-900">
+                  <span className="text-2xl sm:text-3xl font-black text-neutral-900 dark:text-white">
                     {selectedProduct.isFree ? 'Free Download' : `$${currentPrice.toFixed(2)}`}
                   </span>
                   {originalPrice && originalPrice > currentPrice && (
-                    <span className="text-xs text-neutral-400 line-through">
+                    <span className="text-sm text-neutral-400 line-through">
                       ${originalPrice.toFixed(2)}
                     </span>
                   )}
                   {selectedProduct.discountPercent && (
-                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded">
-                      Save ${(originalPrice! - currentPrice).toFixed(2)}
+                    <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-300 dark:border-emerald-800">
+                      Save ${(originalPrice! - currentPrice).toFixed(2)} ({selectedProduct.discountPercent}% off)
                     </span>
                   )}
                 </div>
-                <p className="text-[11px] text-neutral-500 mt-0.5">
-                  Taxes calculated at checkout. Rewards: +{Math.round(currentPrice * 10)} pts
+                <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-1">
+                  Tax calculated at checkout. Earns +{Math.round(currentPrice * 10)} Microsoft Rewards points.
                 </p>
               </div>
 
               {/* Color Variant Picker */}
               {selectedProduct.colorVariants && selectedProduct.colorVariants.length > 0 && (
                 <div>
-                  <label className="text-[10px] font-bold text-neutral-700 uppercase tracking-wider block mb-1.5">
-                    Color: <span className="text-[#0067b8]">{selectedColor?.name}</span>
+                  <label className="text-[11px] font-bold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider block mb-1.5">
+                    Color: <span className="text-[#0067b8] dark:text-[#60cdff]">{selectedColor?.name}</span>
                   </label>
                   <div className="flex items-center gap-2">
                     {selectedProduct.colorVariants.map((c) => (
                       <button
                         key={c.id}
                         onClick={() => setSelectedColor(c)}
-                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-xs font-medium transition-all cursor-pointer ${
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${
                           selectedColor?.id === c.id
-                            ? 'border-[#0067b8] ring-1 ring-[#0067b8]/30 bg-sky-50 font-bold text-[#0067b8]'
-                            : 'border-neutral-200 hover:bg-neutral-50 text-neutral-700'
+                            ? 'border-[#0067b8] dark:border-[#60cdff] ring-2 ring-[#0067b8]/20 bg-sky-50 dark:bg-sky-950/50 text-[#0067b8] dark:text-[#60cdff]'
+                            : 'border-neutral-200 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300'
                         }`}
                       >
                         <span 
-                          className="w-3 h-3 rounded-full border border-black/20"
+                          className="w-3.5 h-3.5 rounded-full border border-black/20"
                           style={{ backgroundColor: c.colorHex }}
                         />
                         <span>{c.name}</span>
@@ -325,25 +359,25 @@ export const ProductDetailModal: React.FC = () => {
               {/* Storage / Spec Variant Picker */}
               {selectedProduct.storageVariants && selectedProduct.storageVariants.length > 0 && (
                 <div>
-                  <label className="text-[10px] font-bold text-neutral-700 uppercase tracking-wider block mb-1.5">
+                  <label className="text-[11px] font-bold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider block mb-1.5">
                     Configuration & Storage:
                   </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {selectedProduct.storageVariants.map((s) => (
                       <button
                         key={s.id}
                         onClick={() => setSelectedStorage(s)}
-                        className={`p-2 rounded-md border text-left text-xs transition-all cursor-pointer ${
+                        className={`p-2.5 rounded-xl border text-left text-xs transition-all cursor-pointer ${
                           selectedStorage?.id === s.id
-                            ? 'border-[#0067b8] ring-1 ring-[#0067b8]/30 bg-sky-50 font-bold text-[#0067b8]'
-                            : 'border-neutral-200 hover:bg-neutral-50 text-neutral-700'
+                            ? 'border-[#0067b8] dark:border-[#60cdff] ring-2 ring-[#0067b8]/20 bg-sky-50 dark:bg-sky-950/50 font-bold text-[#0067b8] dark:text-[#60cdff]'
+                            : 'border-neutral-200 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300'
                         }`}
                       >
-                        <p className="font-semibold text-neutral-900">{s.name}</p>
+                        <p className="font-bold text-neutral-900 dark:text-white">{s.name}</p>
                         {s.priceDelta ? (
-                          <p className="text-[10px] text-neutral-500 mt-0.2">+{`$${s.priceDelta}`}</p>
+                          <p className="text-[10px] text-neutral-500 dark:text-neutral-400 mt-0.5">+{`$${s.priceDelta}`}</p>
                         ) : (
-                          <p className="text-[10px] text-emerald-600 mt-0.2">Base Configuration</p>
+                          <p className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-0.5">Standard Spec</p>
                         )}
                       </button>
                     ))}
@@ -352,25 +386,25 @@ export const ProductDetailModal: React.FC = () => {
               )}
 
               {/* Quantity Selector & Action Buttons */}
-              <div className="space-y-2.5 pt-1">
+              <div className="space-y-3 pt-1">
                 {!selectedProduct.isFree && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold text-neutral-700 uppercase tracking-wider">
+                  <div className="flex items-center gap-3">
+                    <span className="text-[11px] font-bold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider">
                       Quantity:
                     </span>
-                    <div className="flex items-center border border-neutral-300 rounded-md overflow-hidden bg-white">
+                    <div className="flex items-center border border-neutral-300 dark:border-neutral-700 rounded-lg overflow-hidden bg-white dark:bg-neutral-800">
                       <button
                         onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                        className="px-2 py-0.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 font-bold text-xs cursor-pointer"
+                        className="px-3 py-1 bg-neutral-100 dark:bg-neutral-700 hover:bg-neutral-200 dark:hover:bg-neutral-600 text-neutral-700 dark:text-white font-bold text-xs cursor-pointer"
                       >
                         -
                       </button>
-                      <span className="px-3 py-0.5 text-xs font-bold text-neutral-900 min-w-[28px] text-center">
+                      <span className="px-4 py-1 text-xs font-bold text-neutral-900 dark:text-white min-w-[32px] text-center">
                         {quantity}
                       </span>
                       <button
                         onClick={() => setQuantity(Math.min(99, quantity + 1))}
-                        className="px-2 py-0.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 font-bold text-xs cursor-pointer"
+                        className="px-3 py-1 bg-neutral-100 dark:bg-neutral-700 hover:bg-neutral-200 dark:hover:bg-neutral-600 text-neutral-700 dark:text-white font-bold text-xs cursor-pointer"
                       >
                         +
                       </button>
@@ -383,9 +417,9 @@ export const ProductDetailModal: React.FC = () => {
                   <button
                     id="modal-add-to-cart-button"
                     onClick={handleAddToCart}
-                    className="flex-1 py-2 px-3 rounded-lg bg-[#0067b8] hover:bg-[#005da6] active:scale-98 text-white font-semibold text-xs shadow-2xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                    className="flex-1 py-2.5 px-4 rounded-xl bg-[#0067b8] hover:bg-[#005da6] active:scale-98 text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
                   >
-                    <ShoppingCart className="w-3.5 h-3.5" />
+                    <ShoppingCart className="w-4 h-4" />
                     <span>{selectedProduct.isFree ? 'Get Free Download' : 'Add to Cart'}</span>
                   </button>
 
@@ -393,7 +427,7 @@ export const ProductDetailModal: React.FC = () => {
                     <button
                       id="modal-buy-now-button"
                       onClick={handleBuyNow}
-                      className="py-2 px-4 rounded-lg bg-neutral-900 hover:bg-black active:scale-98 text-white font-semibold text-xs shadow-2xs transition-all cursor-pointer"
+                      className="py-2.5 px-5 rounded-xl bg-neutral-900 hover:bg-black dark:bg-neutral-750 dark:hover:bg-neutral-700 active:scale-98 text-white font-bold text-xs shadow-md transition-all cursor-pointer"
                     >
                       <span>Buy Now</span>
                     </button>
@@ -401,10 +435,10 @@ export const ProductDetailModal: React.FC = () => {
 
                   <button
                     onClick={() => toggleWishlist(selectedProduct)}
-                    className={`p-2 rounded-lg border transition-colors cursor-pointer ${
+                    className={`p-2.5 rounded-xl border transition-colors cursor-pointer ${
                       isWishlisted
-                        ? 'bg-rose-50 border-rose-200 text-rose-600'
-                        : 'border-neutral-200 text-neutral-500 hover:text-rose-600 hover:bg-neutral-50'
+                        ? 'bg-rose-50 dark:bg-rose-950/50 border-rose-200 dark:border-rose-800 text-rose-600'
+                        : 'border-neutral-200 dark:border-neutral-700 text-neutral-500 hover:text-rose-600 hover:bg-neutral-50 dark:hover:bg-neutral-800'
                     }`}
                     title={isWishlisted ? 'Remove from wishlist' : 'Save to wishlist'}
                   >
@@ -417,52 +451,93 @@ export const ProductDetailModal: React.FC = () => {
 
           </div>
 
-          {/* Deep Tabs Section: Features, Specs, Reviews, What's Included */}
-          <div className="pt-4 border-t border-neutral-200">
+          {/* Frequently Bought Together Bundle Card */}
+          {bundleAddon && !selectedProduct.isFree && (
+            <div className="p-4 bg-sky-50/60 dark:bg-neutral-800/60 rounded-2xl border border-sky-200 dark:border-neutral-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 shrink-0">
+                  <img src={selectedProduct.image} alt={selectedProduct.title} className="w-12 h-12 rounded-lg object-cover border border-neutral-200 dark:border-neutral-700" />
+                  <Plus className="w-4 h-4 text-neutral-400" />
+                  <img src={bundleAddon.image} alt={bundleAddon.title} className="w-12 h-12 rounded-lg object-cover border border-neutral-200 dark:border-neutral-700" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#0067b8] dark:text-[#60cdff]">
+                    Bundle & Save
+                  </span>
+                  <p className="text-xs font-bold text-neutral-900 dark:text-white">
+                    Frequently Bought Together: {bundleAddon.title}
+                  </p>
+                  <p className="text-[11px] text-neutral-600 dark:text-neutral-400">
+                    Combo total: <span className="font-bold text-neutral-900 dark:text-white">${(currentPrice + bundleAddon.price * 0.85).toFixed(2)}</span> (Save 15% on accessory)
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={handleAddBundle}
+                className="px-3.5 py-2 rounded-xl bg-[#0067b8] hover:bg-[#005da6] text-white text-xs font-bold shrink-0 cursor-pointer shadow-xs"
+              >
+                Add Both to Cart
+              </button>
+            </div>
+          )}
+
+          {/* Deep Tabs Section: Features, Specs, System Requirements, Reviews, What's Included */}
+          <div className="pt-4 border-t border-neutral-200 dark:border-neutral-800">
             {/* Tab Headers */}
-            <div className="flex items-center gap-1.5 border-b border-neutral-200 pb-1.5 overflow-x-auto">
+            <div className="flex items-center gap-1.5 border-b border-neutral-200 dark:border-neutral-800 pb-2 overflow-x-auto">
               <button
                 onClick={() => setActiveTab('features')}
-                className={`px-3 py-1.5 rounded-md text-xs font-bold transition-colors cursor-pointer ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
                   activeTab === 'features'
-                    ? 'bg-sky-50 text-[#0067b8] border border-sky-200'
-                    : 'text-neutral-600 hover:bg-neutral-100'
+                    ? 'bg-sky-50 dark:bg-sky-950/60 text-[#0067b8] dark:text-[#60cdff] border border-sky-200 dark:border-sky-800'
+                    : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800'
                 }`}
               >
-                Features & Overview
+                Features & Highlights
               </button>
               <button
                 onClick={() => setActiveTab('specs')}
-                className={`px-3 py-1.5 rounded-md text-xs font-bold transition-colors cursor-pointer ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
                   activeTab === 'specs'
-                    ? 'bg-sky-50 text-[#0067b8] border border-sky-200'
-                    : 'text-neutral-600 hover:bg-neutral-100'
+                    ? 'bg-sky-50 dark:bg-sky-950/60 text-[#0067b8] dark:text-[#60cdff] border border-sky-200 dark:border-sky-800'
+                    : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800'
                 }`}
               >
-                Technical Specifications
+                Tech Specs
+              </button>
+              <button
+                onClick={() => setActiveTab('requirements')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                  activeTab === 'requirements'
+                    ? 'bg-sky-50 dark:bg-sky-950/60 text-[#0067b8] dark:text-[#60cdff] border border-sky-200 dark:border-sky-800'
+                    : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+                }`}
+              >
+                System Requirements
               </button>
               <button
                 onClick={() => setActiveTab('reviews')}
-                className={`px-3 py-1.5 rounded-md text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 ${
                   activeTab === 'reviews'
-                    ? 'bg-sky-50 text-[#0067b8] border border-sky-200'
-                    : 'text-neutral-600 hover:bg-neutral-100'
+                    ? 'bg-sky-50 dark:bg-sky-950/60 text-[#0067b8] dark:text-[#60cdff] border border-sky-200 dark:border-sky-800'
+                    : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800'
                 }`}
               >
                 <span>Customer Reviews</span>
-                <span className="bg-neutral-200 text-neutral-700 text-[9px] px-1.5 py-0.2 rounded-full">
+                <span className="bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-200 text-[10px] font-bold px-1.5 py-0.2 rounded-full">
                   {localReviews.length}
                 </span>
               </button>
               <button
                 onClick={() => setActiveTab('included')}
-                className={`px-3 py-1.5 rounded-md text-xs font-bold transition-colors cursor-pointer ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
                   activeTab === 'included'
-                    ? 'bg-sky-50 text-[#0067b8] border border-sky-200'
-                    : 'text-neutral-600 hover:bg-neutral-100'
+                    ? 'bg-sky-50 dark:bg-sky-950/60 text-[#0067b8] dark:text-[#60cdff] border border-sky-200 dark:border-sky-800'
+                    : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800'
                 }`}
               >
-                In The Box / Delivery
+                In The Box
               </button>
             </div>
 
@@ -471,13 +546,13 @@ export const ProductDetailModal: React.FC = () => {
               
               {/* Features Tab */}
               {activeTab === 'features' && (
-                <div className="space-y-3">
-                  <h3 className="text-sm font-bold text-neutral-900">Key Capabilities & Features</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <div className="space-y-4">
+                  <h3 className="text-sm font-bold text-neutral-900 dark:text-white">Key Capabilities & Features</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                     {selectedProduct.features.map((feat, idx) => (
-                      <div key={idx} className="flex items-start gap-2 p-2 bg-neutral-50 rounded-md border border-neutral-200/80">
-                        <Check className="w-3.5 h-3.5 text-[#0067b8] shrink-0 mt-0.5" />
-                        <span className="text-xs text-neutral-700 font-medium">{feat}</span>
+                      <div key={idx} className="flex items-start gap-2.5 p-3 bg-neutral-50 dark:bg-neutral-800/80 rounded-xl border border-neutral-200/80 dark:border-neutral-700">
+                        <Check className="w-4 h-4 text-[#0067b8] dark:text-[#60cdff] shrink-0 mt-0.5" />
+                        <span className="text-xs text-neutral-700 dark:text-neutral-200 font-medium leading-relaxed">{feat}</span>
                       </div>
                     ))}
                   </div>
@@ -487,59 +562,118 @@ export const ProductDetailModal: React.FC = () => {
               {/* Specs Tab */}
               {activeTab === 'specs' && (
                 <div className="space-y-3">
-                  <h3 className="text-sm font-bold text-neutral-900">Technical Specifications</h3>
-                  <div className="bg-white rounded-lg border border-neutral-200 overflow-hidden divide-y divide-neutral-200">
+                  <h3 className="text-sm font-bold text-neutral-900 dark:text-white">Technical Specifications</h3>
+                  <div className="bg-white dark:bg-neutral-850 rounded-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden divide-y divide-neutral-200 dark:divide-neutral-700">
                     {Object.entries(selectedProduct.specifications).map(([key, val]) => (
-                      <div key={key} className="grid grid-cols-1 sm:grid-cols-3 p-2 text-xs">
-                        <span className="font-bold text-neutral-800">{key}</span>
-                        <span className="sm:col-span-2 text-neutral-600 mt-0.5 sm:mt-0">{val}</span>
+                      <div key={key} className="grid grid-cols-1 sm:grid-cols-3 p-3 text-xs">
+                        <span className="font-bold text-neutral-900 dark:text-neutral-100">{key}</span>
+                        <span className="sm:col-span-2 text-neutral-600 dark:text-neutral-300 mt-0.5 sm:mt-0">{val}</span>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* Reviews Tab */}
-              {activeTab === 'reviews' && (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-sm font-bold text-neutral-900">Customer Feedback</h3>
-                      <p className="text-[11px] text-neutral-500">Based on verified purchases from Microsoft Store</p>
+              {/* System Requirements Tab */}
+              {activeTab === 'requirements' && (
+                <div className="space-y-3">
+                  <h3 className="text-sm font-bold text-neutral-900 dark:text-white">Hardware & OS Compatibility</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="p-3 bg-neutral-50 dark:bg-neutral-800/80 rounded-xl border border-neutral-200 dark:border-neutral-700">
+                      <h4 className="text-xs font-bold text-neutral-900 dark:text-white mb-2">Minimum Requirements</h4>
+                      <ul className="text-xs text-neutral-600 dark:text-neutral-300 space-y-1.5">
+                        <li><strong>OS:</strong> Windows 10 (version 19041.0 or higher)</li>
+                        <li><strong>Processor:</strong> 1.6 GHz dual-core or faster</li>
+                        <li><strong>Memory:</strong> 4 GB RAM</li>
+                        <li><strong>Graphics:</strong> DirectX 12 compatible</li>
+                        <li><strong>Storage:</strong> 10 GB available drive space</li>
+                      </ul>
                     </div>
+                    <div className="p-3 bg-neutral-50 dark:bg-neutral-800/80 rounded-xl border border-neutral-200 dark:border-neutral-700">
+                      <h4 className="text-xs font-bold text-[#0067b8] dark:text-[#60cdff] mb-2">Recommended for Best Experience</h4>
+                      <ul className="text-xs text-neutral-600 dark:text-neutral-300 space-y-1.5">
+                        <li><strong>OS:</strong> Windows 11 with latest Feature Update</li>
+                        <li><strong>Processor:</strong> Intel Core i7 / AMD Ryzen 7 or Snapdragon X Elite (Copilot+ NPU)</li>
+                        <li><strong>Memory:</strong> 16 GB or 32 GB RAM</li>
+                        <li><strong>Graphics:</strong> NVIDIA GeForce RTX or Intel Arc Graphics</li>
+                        <li><strong>Display:</strong> 1440p HDR or 4K with 120Hz refresh</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Reviews Tab with Visual Breakdown Bar Chart */}
+              {activeTab === 'reviews' && (
+                <div className="space-y-5">
+                  {/* Reviews Summary & Rating Distribution */}
+                  <div className="p-4 bg-neutral-50 dark:bg-neutral-800/70 rounded-2xl border border-neutral-200 dark:border-neutral-700 flex flex-col md:flex-row items-center justify-between gap-6">
+                    <div className="text-center md:text-left shrink-0">
+                      <span className="text-4xl font-black text-neutral-900 dark:text-white">
+                        {selectedProduct.rating.toFixed(1)}
+                      </span>
+                      <div className="flex items-center justify-center md:justify-start text-amber-400 my-1">
+                        {[1, 2, 3, 4, 5].map((i) => (
+                          <Star key={i} className="w-4 h-4 fill-current" />
+                        ))}
+                      </div>
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                        {localReviews.length} total customer reviews
+                      </p>
+                    </div>
+
+                    {/* Rating Breakdown Bars */}
+                    <div className="w-full max-w-sm space-y-1.5">
+                      {[
+                        { stars: 5, pct: 78 },
+                        { stars: 4, pct: 14 },
+                        { stars: 3, pct: 5 },
+                        { stars: 2, pct: 2 },
+                        { stars: 1, pct: 1 }
+                      ].map((bar) => (
+                        <div key={bar.stars} className="flex items-center gap-2 text-xs">
+                          <span className="w-6 font-semibold text-neutral-700 dark:text-neutral-300">{bar.stars}★</span>
+                          <div className="flex-1 h-2 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden">
+                            <div className="h-full bg-amber-400 rounded-full" style={{ width: `${bar.pct}%` }} />
+                          </div>
+                          <span className="w-8 text-[11px] text-neutral-500 dark:text-neutral-400 text-right">{bar.pct}%</span>
+                        </div>
+                      ))}
+                    </div>
+
                     <button
                       onClick={() => setShowReviewForm(!showReviewForm)}
-                      className="px-3 py-1.5 bg-neutral-900 hover:bg-black text-white text-xs font-semibold rounded-md flex items-center gap-1 cursor-pointer shadow-2xs"
+                      className="px-4 py-2 bg-neutral-900 hover:bg-black dark:bg-white dark:hover:bg-neutral-200 text-white dark:text-neutral-900 text-xs font-bold rounded-xl flex items-center gap-1.5 cursor-pointer shadow-md shrink-0"
                     >
-                      <MessageSquarePlus className="w-3 h-3" />
-                      <span>Write Review</span>
+                      <MessageSquarePlus className="w-3.5 h-3.5" />
+                      <span>Write a Review</span>
                     </button>
                   </div>
 
                   {/* Write Review Form */}
                   {showReviewForm && (
-                    <form onSubmit={handleReviewSubmit} className="p-3 bg-sky-50/70 border border-sky-200 rounded-lg space-y-2">
-                      <h4 className="text-[10px] font-bold text-[#0067b8] uppercase tracking-wider">Leave Your Review</h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <form onSubmit={handleReviewSubmit} className="p-4 bg-sky-50/70 dark:bg-neutral-800 border border-sky-200 dark:border-neutral-700 rounded-2xl space-y-3">
+                      <h4 className="text-xs font-bold text-[#0067b8] dark:text-[#60cdff] uppercase tracking-wider">Leave Your Review</h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <input
                           type="text"
                           placeholder="Your Name"
                           value={newReviewAuthor}
                           onChange={(e) => setNewReviewAuthor(e.target.value)}
                           required
-                          className="px-2.5 py-1 text-xs bg-white border border-neutral-300 rounded-md outline-hidden focus:ring-1 focus:ring-[#0067b8]"
+                          className="px-3 py-1.5 text-xs bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 rounded-lg outline-hidden focus:ring-1 focus:ring-[#0067b8]"
                         />
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-medium text-neutral-700">Rating:</span>
+                          <span className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">Rating:</span>
                           <div className="flex items-center gap-1">
                             {[1, 2, 3, 4, 5].map((star) => (
                               <button
                                 key={star}
                                 type="button"
                                 onClick={() => setNewReviewRating(star)}
-                                className="text-amber-400 p-0.5"
+                                className="text-amber-400 p-0.5 cursor-pointer"
                               >
-                                <Star className={`w-3.5 h-3.5 ${star <= newReviewRating ? 'fill-amber-400' : 'text-neutral-300'}`} />
+                                <Star className={`w-4 h-4 ${star <= newReviewRating ? 'fill-amber-400' : 'text-neutral-300 dark:text-neutral-600'}`} />
                               </button>
                             ))}
                           </div>
@@ -547,30 +681,30 @@ export const ProductDetailModal: React.FC = () => {
                       </div>
                       <input
                         type="text"
-                        placeholder="Review Headline (e.g. Fantastic performance)"
+                        placeholder="Review Headline (e.g. Fantastic performance & battery life)"
                         value={newReviewTitle}
                         onChange={(e) => setNewReviewTitle(e.target.value)}
-                        className="w-full px-2.5 py-1 text-xs bg-white border border-neutral-300 rounded-md outline-hidden focus:ring-1 focus:ring-[#0067b8]"
+                        className="w-full px-3 py-1.5 text-xs bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 rounded-lg outline-hidden focus:ring-1 focus:ring-[#0067b8]"
                       />
                       <textarea
-                        placeholder="Share your detailed experience with this product..."
+                        placeholder="Share your detailed thoughts, build quality, speed, setup experience..."
                         value={newReviewComment}
                         onChange={(e) => setNewReviewComment(e.target.value)}
                         required
-                        rows={2}
-                        className="w-full px-2.5 py-1.5 text-xs bg-white border border-neutral-300 rounded-md outline-hidden focus:ring-1 focus:ring-[#0067b8]"
+                        rows={3}
+                        className="w-full px-3 py-2 text-xs bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 rounded-lg outline-hidden focus:ring-1 focus:ring-[#0067b8]"
                       />
-                      <div className="flex justify-end gap-1.5">
+                      <div className="flex justify-end gap-2">
                         <button
                           type="button"
                           onClick={() => setShowReviewForm(false)}
-                          className="px-2.5 py-1 text-xs font-semibold text-neutral-600 hover:bg-neutral-100 rounded-md"
+                          className="px-3 py-1.5 text-xs font-semibold text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg"
                         >
                           Cancel
                         </button>
                         <button
                           type="submit"
-                          className="px-3 py-1 text-xs font-semibold bg-[#0067b8] text-white rounded-md hover:bg-[#005da6]"
+                          className="px-4 py-1.5 text-xs font-bold bg-[#0067b8] text-white rounded-lg hover:bg-[#005da6] cursor-pointer shadow-xs"
                         >
                           Submit Review
                         </button>
@@ -578,34 +712,47 @@ export const ProductDetailModal: React.FC = () => {
                     </form>
                   )}
 
-                  {/* Reviews List */}
-                  <div className="space-y-2">
+                  {/* Reviews List with Helpful Upvote */}
+                  <div className="space-y-3">
                     {localReviews.length > 0 ? (
-                      localReviews.map((rev) => (
-                        <div key={rev.id} className="p-3 bg-neutral-50 rounded-lg border border-neutral-200/80 space-y-1">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-xs font-bold text-neutral-900">{rev.author}</span>
-                              {rev.verified && (
-                                <span className="text-[9px] font-semibold text-emerald-700 bg-emerald-50 px-1 py-0.2 rounded border border-emerald-200">
-                                  Verified Purchase
-                                </span>
-                              )}
+                      localReviews.map((rev) => {
+                        const totalHelpful = (rev.helpfulCount || 0) + (helpfulVotes[rev.id] || 0);
+                        return (
+                          <div key={rev.id} className="p-4 bg-neutral-50 dark:bg-neutral-800/80 rounded-xl border border-neutral-200/80 dark:border-neutral-700 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-bold text-neutral-900 dark:text-white">{rev.author}</span>
+                                {rev.verified && (
+                                  <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.2 rounded border border-emerald-200 dark:border-emerald-800">
+                                    Verified Purchase
+                                  </span>
+                                )}
+                              </div>
+                              <span className="text-[11px] text-neutral-400">{rev.date}</span>
                             </div>
-                            <span className="text-[10px] text-neutral-400">{rev.date}</span>
+                            <div className="flex items-center gap-0.5 text-amber-400">
+                              {[1, 2, 3, 4, 5].map((s) => (
+                                <Star
+                                  key={s}
+                                  className={`w-3.5 h-3.5 ${s <= rev.rating ? 'fill-amber-400 text-amber-400' : 'text-neutral-300 dark:text-neutral-600'}`}
+                                />
+                              ))}
+                            </div>
+                            <p className="text-xs font-bold text-neutral-900 dark:text-white">{rev.title}</p>
+                            <p className="text-xs text-neutral-600 dark:text-neutral-300 leading-relaxed">{rev.comment}</p>
+                            <div className="pt-2 border-t border-neutral-200/60 dark:border-neutral-700/60 flex items-center justify-between text-[11px]">
+                              <span className="text-neutral-400">Was this review helpful?</span>
+                              <button
+                                onClick={() => handleVoteHelpful(rev.id)}
+                                className="flex items-center gap-1 text-neutral-600 dark:text-neutral-400 hover:text-[#0067b8] dark:hover:text-[#60cdff] cursor-pointer"
+                              >
+                                <ThumbsUp className="w-3 h-3" />
+                                <span>Helpful ({totalHelpful})</span>
+                              </button>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-0.5 text-amber-400">
-                            {[1, 2, 3, 4, 5].map((s) => (
-                              <Star
-                                key={s}
-                                className={`w-3 h-3 ${s <= rev.rating ? 'fill-amber-400 text-amber-400' : 'text-neutral-300'}`}
-                              />
-                            ))}
-                          </div>
-                          <p className="text-xs font-bold text-neutral-800">{rev.title}</p>
-                          <p className="text-xs text-neutral-600 leading-relaxed">{rev.comment}</p>
-                        </div>
-                      ))
+                        );
+                      })
                     ) : (
                       <p className="text-xs text-neutral-500 italic">No reviews yet. Be the first to share your thoughts!</p>
                     )}
@@ -616,11 +763,11 @@ export const ProductDetailModal: React.FC = () => {
               {/* What's Included Tab */}
               {activeTab === 'included' && (
                 <div className="space-y-3">
-                  <h3 className="text-sm font-bold text-neutral-900">What's in the Box & Delivery Info</h3>
-                  <div className="space-y-1.5">
+                  <h3 className="text-sm font-bold text-neutral-900 dark:text-white">What&apos;s in the Box & Delivery Info</h3>
+                  <div className="space-y-2">
                     {selectedProduct.included.map((inc, idx) => (
-                      <div key={idx} className="flex items-center gap-2 p-2 bg-neutral-50 rounded-md border border-neutral-200/80 text-xs font-medium text-neutral-700">
-                        <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      <div key={idx} className="flex items-center gap-2.5 p-3 bg-neutral-50 dark:bg-neutral-800/80 rounded-xl border border-neutral-200/80 dark:border-neutral-700 text-xs font-medium text-neutral-700 dark:text-neutral-300">
+                        <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                         <span>{inc}</span>
                       </div>
                     ))}
@@ -633,27 +780,27 @@ export const ProductDetailModal: React.FC = () => {
 
           {/* Related Products Bar */}
           {relatedProducts.length > 0 && (
-            <div className="pt-4 border-t border-neutral-200">
-              <h3 className="text-xs font-bold text-neutral-900 uppercase tracking-wider mb-2.5">
-                You May Also Like
+            <div className="pt-4 border-t border-neutral-200 dark:border-neutral-800">
+              <h3 className="text-xs font-bold text-neutral-900 dark:text-white uppercase tracking-wider mb-3">
+                Customers Also Viewed
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {relatedProducts.map((rel) => (
                   <div
                     key={rel.id}
                     onClick={() => quickViewProduct(rel)}
-                    className="p-2 rounded-lg border border-neutral-200 hover:border-[#0067b8] bg-neutral-50/50 hover:bg-sky-50/40 transition-all cursor-pointer flex items-center gap-2.5 group"
+                    className="p-2.5 rounded-xl border border-neutral-200 dark:border-neutral-700 hover:border-[#0067b8] dark:hover:border-[#60cdff] bg-neutral-50/50 dark:bg-neutral-800/50 hover:bg-sky-50/40 transition-all cursor-pointer flex items-center gap-3 group"
                   >
                     <img
                       src={rel.image}
                       alt={rel.title}
-                      className="w-10 h-10 rounded-md object-cover bg-neutral-100 shrink-0"
+                      className="w-12 h-12 rounded-lg object-cover bg-neutral-100 dark:bg-neutral-700 shrink-0 border border-neutral-200 dark:border-neutral-700"
                     />
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs font-bold text-neutral-900 truncate group-hover:text-[#0067b8]">
+                      <p className="text-xs font-bold text-neutral-900 dark:text-white truncate group-hover:text-[#0067b8] dark:group-hover:text-[#60cdff]">
                         {rel.title}
                       </p>
-                      <p className="text-[10px] text-neutral-500">
+                      <p className="text-[11px] font-extrabold text-neutral-900 dark:text-white">
                         {rel.isFree ? 'Free' : `$${rel.price.toFixed(2)}`}
                       </p>
                     </div>

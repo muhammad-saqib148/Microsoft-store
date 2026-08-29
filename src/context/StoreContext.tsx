@@ -17,6 +17,12 @@ interface StoreContextType {
   setActiveCategory: (cat: ProductCategory) => void;
   selectedProduct: Product | null;
   setSelectedProduct: (p: Product | null) => void;
+  quickViewProductModal: Product | null;
+  setQuickViewProductModal: (p: Product | null) => void;
+  
+  // Theme
+  theme: 'light' | 'dark';
+  toggleTheme: () => void;
   
   // Cart
   cart: CartItem[];
@@ -45,6 +51,10 @@ interface StoreContextType {
   setFilters: React.Dispatch<React.SetStateAction<FilterState>>;
   resetFilters: () => void;
   filteredProducts: Product[];
+  recentSearches: string[];
+  addRecentSearch: (query: string) => void;
+  removeRecentSearch: (query: string) => void;
+  clearRecentSearches: () => void;
   
   // Modals & Navigation
   isCheckoutOpen: boolean;
@@ -62,6 +72,7 @@ interface StoreContextType {
   user: UserProfile;
   setUser: React.Dispatch<React.SetStateAction<UserProfile>>;
   quickViewProduct: (product: Product) => void;
+  openProductDetails: (product: Product) => void;
   scrollToSection: (sectionId: string) => void;
 }
 
@@ -85,6 +96,70 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [products, setProducts] = useState<Product[]>(sampleProducts);
   const [activeCategory, setActiveCategory] = useState<ProductCategory>('all');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [quickViewProductModal, setQuickViewProductModal] = useState<Product | null>(null);
+  
+  // Theme state persisted to localStorage
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    try {
+      const saved = localStorage.getItem('ms_store_theme');
+      if (saved === 'dark' || saved === 'light') return saved;
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    } catch {
+      return 'light';
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('ms_store_theme', theme);
+      if (theme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
+  };
+
+  // Recent Searches state
+  const [recentSearches, setRecentSearches] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('ms_store_recent_searches');
+      return saved ? JSON.parse(saved) : ['Surface Pro 11', 'Game Pass Ultimate', 'Copilot Pro', 'Flight Simulator'];
+    } catch {
+      return ['Surface Pro 11', 'Game Pass Ultimate', 'Copilot Pro', 'Flight Simulator'];
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('ms_store_recent_searches', JSON.stringify(recentSearches));
+    } catch (e) {
+      console.error(e);
+    }
+  }, [recentSearches]);
+
+  const addRecentSearch = (query: string) => {
+    const clean = query.trim();
+    if (!clean) return;
+    setRecentSearches(prev => {
+      const filtered = prev.filter(q => q.toLowerCase() !== clean.toLowerCase());
+      return [clean, ...filtered].slice(0, 8);
+    });
+  };
+
+  const removeRecentSearch = (query: string) => {
+    setRecentSearches(prev => prev.filter(q => q !== query));
+  };
+
+  const clearRecentSearches = () => {
+    setRecentSearches([]);
+  };
   
   // Cart state persisted to localStorage
   const [cart, setCart] = useState<CartItem[]>(() => {
@@ -317,6 +392,10 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   };
 
   const quickViewProduct = (product: Product) => {
+    setQuickViewProductModal(product);
+  };
+
+  const openProductDetails = (product: Product) => {
     setSelectedProduct(product);
   };
 
@@ -495,6 +574,10 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         setActiveCategory,
         selectedProduct,
         setSelectedProduct,
+        quickViewProductModal,
+        setQuickViewProductModal,
+        theme,
+        toggleTheme,
         cart,
         cartCount,
         cartSubtotal,
@@ -517,6 +600,10 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         setFilters,
         resetFilters,
         filteredProducts,
+        recentSearches,
+        addRecentSearch,
+        removeRecentSearch,
+        clearRecentSearches,
         isCheckoutOpen,
         setIsCheckoutOpen,
         orders,
@@ -528,6 +615,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         user,
         setUser,
         quickViewProduct,
+        openProductDetails,
         scrollToSection
       }}
     >
