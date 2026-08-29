@@ -25,6 +25,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'gri
               alt={product.title}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               loading="lazy"
+              referrerPolicy="no-referrer"
+              onError={(e) => {
+                const target = e.currentTarget;
+                if (!target.src.includes('unsplash.com/photo-1611339555312-e607c8352fd7')) {
+                  target.src = 'https://images.unsplash.com/photo-1611339555312-e607c8352fd7?w=900&auto=format&fit=crop&q=80';
+                }
+              }}
             />
             {product.badge && (
               <span className="absolute top-1 left-1 bg-[#0067b8] text-white text-[9px] font-bold px-1.5 py-0.2 rounded shadow-2xs uppercase">
@@ -116,6 +123,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'gri
           alt={product.title}
           className="w-full h-full object-cover group-hover:scale-104 transition-transform duration-300"
           loading="lazy"
+          referrerPolicy="no-referrer"
+          onError={(e) => {
+            const target = e.currentTarget;
+            if (!target.src.includes('unsplash.com/photo-1611339555312-e607c8352fd7')) {
+              target.src = 'https://images.unsplash.com/photo-1611339555312-e607c8352fd7?w=900&auto=format&fit=crop&q=80';
+            }
+          }}
         />
 
         {/* Badges Overlay */}

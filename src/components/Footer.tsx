@@ -9,13 +9,16 @@ import {
   Facebook, 
   Instagram, 
   Linkedin,
-  Sparkles
+  Sparkles,
+  Phone,
+  Mail,
+  UserCheck
 } from 'lucide-react';
 import { MicrosoftLogo } from './MicrosoftLogo';
 import { useStore } from '../context/StoreContext';
 
 export const Footer: React.FC = () => {
-  const { setActiveCategory, setFilters } = useStore();
+  const { setActiveCategory, setFilters, user } = useStore();
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -171,6 +174,38 @@ export const Footer: React.FC = () => {
             </ul>
           </div>
 
+        </div>
+
+        {/* Personal Contact & Store Admin Card */}
+        <div className="mt-6 p-3 rounded-lg bg-neutral-200/50 border border-neutral-300 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2.5">
+            <img 
+              src={user.avatar} 
+              alt={user.name} 
+              className="w-9 h-9 rounded-full object-cover ring-2 ring-[#0067b8]/40 shrink-0" 
+            />
+            <div>
+              <p className="font-bold text-neutral-900">{user.name} <span className="text-[10px] text-neutral-500 font-normal">| Store Admin & Account Owner</span></p>
+              <p className="text-[11px] text-neutral-600">Order notifications & inquiries are forwarded to verified contact details</p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs font-semibold text-neutral-700">
+            <a 
+              href="tel:03491905800" 
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white border border-neutral-300 hover:text-[#0067b8] hover:border-[#0067b8] transition-colors"
+            >
+              <Phone className="w-3.5 h-3.5 text-emerald-600" />
+              <span>03491905800</span>
+            </a>
+            <a 
+              href="mailto:sk8013908@gmail.com" 
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white border border-neutral-300 hover:text-[#0067b8] hover:border-[#0067b8] transition-colors"
+            >
+              <Mail className="w-3.5 h-3.5 text-[#0067b8]" />
+              <span>sk8013908@gmail.com</span>
+            </a>
+          </div>
         </div>
 
         {/* Social Media & Brand Bar */}

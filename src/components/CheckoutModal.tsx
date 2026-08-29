@@ -12,7 +12,10 @@ import {
   Receipt, 
   Printer, 
   CheckCircle2,
-  Award
+  Award,
+  Mail,
+  Phone,
+  ExternalLink
 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { Order } from '../types';
@@ -35,19 +38,19 @@ export const CheckoutModal: React.FC = () => {
 
   // Form states
   const [shippingInfo, setShippingInfo] = useState({
-    fullName: user.name || 'Alex Mercer',
-    email: user.email || 'alex.mercer@outlook.com',
-    phone: '+1 (555) 234-8900',
-    street: 'One Microsoft Way',
-    city: 'Redmond',
-    state: 'WA',
-    zip: '98052'
+    fullName: user.name || 'Muhammad Saqib',
+    email: user.email || 'sk8013908@gmail.com',
+    phone: user.phone || '03491905800',
+    street: '123 Innovation Boulevard',
+    city: 'Lahore',
+    state: 'Punjab',
+    zip: '54000'
   });
 
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'mspay' | 'paypal'>('mspay');
   const [cardInfo, setCardInfo] = useState({
     number: '•••• •••• •••• 4242',
-    name: 'Alex Mercer',
+    name: user.name || 'Muhammad Saqib',
     expiry: '08/28',
     cvv: '912'
   });
@@ -151,7 +154,22 @@ export const CheckoutModal: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] font-bold text-neutral-700 block mb-0.5">Email Address</label>
+                  <label className="text-[11px] font-bold text-neutral-700 block mb-0.5">
+                    Phone Number / WhatsApp
+                  </label>
+                  <input
+                    type="tel"
+                    required
+                    value={shippingInfo.phone}
+                    onChange={(e) => setShippingInfo({ ...shippingInfo, phone: e.target.value })}
+                    className="w-full px-2.5 py-1.5 text-xs bg-neutral-50 border border-neutral-300 rounded-md outline-hidden focus:ring-1 focus:ring-[#0067b8]"
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <div className="flex items-center justify-between mb-0.5">
+                    <label className="text-[11px] font-bold text-neutral-700">Notification Email (Order Receipt)</label>
+                    <span className="text-[10px] text-[#0067b8] font-medium">Instant alerts sent here</span>
+                  </div>
                   <input
                     type="email"
                     required
@@ -182,7 +200,7 @@ export const CheckoutModal: React.FC = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="text-[11px] font-bold text-neutral-700 block mb-0.5">State</label>
+                    <label className="text-[11px] font-bold text-neutral-700 block mb-0.5">State / Province</label>
                     <input
                       type="text"
                       required
@@ -192,7 +210,7 @@ export const CheckoutModal: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="text-[11px] font-bold text-neutral-700 block mb-0.5">Zip Code</label>
+                    <label className="text-[11px] font-bold text-neutral-700 block mb-0.5">Postal / Zip Code</label>
                     <input
                       type="text"
                       required
@@ -446,14 +464,48 @@ export const CheckoutModal: React.FC = () => {
 
               <div>
                 <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                  Payment Verified & Completed
+                  Payment Verified & Order Confirmed
                 </span>
                 <h2 className="text-xl sm:text-2xl font-extrabold text-neutral-900 mt-2">
-                  Thank you for your order!
+                  Thank you for your order, Muhammad Saqib!
                 </h2>
                 <p className="text-xs text-neutral-600 mt-1">
-                  Order confirmation and digital product keys have been sent to <strong>{confirmedOrder.shippingAddress.email}</strong>.
+                  Your purchase was completed successfully. Order details & digital license keys have been dispatched.
                 </p>
+              </div>
+
+              {/* Notification Banner to sk8013908@gmail.com & 03491905800 */}
+              <div className="max-w-lg mx-auto bg-gradient-to-r from-sky-50 to-indigo-50 border border-sky-200 rounded-xl p-3.5 text-left shadow-2xs space-y-2">
+                <div className="flex items-start gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-[#0067b8] text-white flex items-center justify-center shrink-0">
+                    <Mail className="w-4 h-4" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-1">
+                      <h4 className="text-xs font-bold text-[#0067b8]">Instant Email Notification Sent</h4>
+                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded">
+                        DISPATCHED
+                      </span>
+                    </div>
+                    <p className="text-xs font-semibold text-neutral-900 mt-0.5">
+                      Recipient: <span className="font-mono text-[#0067b8]">sk8013908@gmail.com</span>
+                    </p>
+                    <p className="text-[11px] text-neutral-600 mt-0.5">
+                      Customer: <strong>Muhammad Saqib</strong> • Phone / WhatsApp: <strong className="text-neutral-800">03491905800</strong>
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-sky-200/80 flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                  <span className="text-neutral-500">Subject: Order Confirmation #{confirmedOrder.id}</span>
+                  <a
+                    href={`mailto:sk8013908@gmail.com?subject=${encodeURIComponent(`[Microsoft Store] Order Confirmation #${confirmedOrder.id} - Muhammad Saqib`)}&body=${encodeURIComponent(`Dear Muhammad Saqib,\n\nYour order #${confirmedOrder.id} has been processed successfully!\n\nCustomer: Muhammad Saqib\nContact Number: 03491905800\nNotification Email: sk8013908@gmail.com\nOrder Total: $${confirmedOrder.total.toFixed(2)}\n\nThank you for shopping with Microsoft Store!`)}`}
+                    className="inline-flex items-center gap-1 font-bold text-[#0067b8] hover:underline cursor-pointer"
+                  >
+                    <span>Open in Gmail / Mail App</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
               </div>
 
               {/* Receipt Summary Card */}
@@ -480,6 +532,22 @@ export const CheckoutModal: React.FC = () => {
                         </span>
                       </div>
                     ))}
+                  </div>
+                </div>
+
+                {/* Customer Contact Details */}
+                <div className="pt-2 border-t border-neutral-200 grid grid-cols-2 gap-2 text-[11px] text-neutral-600 bg-white p-2 rounded-lg border border-neutral-200">
+                  <div>
+                    <span className="text-[10px] text-neutral-400 block font-bold uppercase">Customer</span>
+                    <span className="font-semibold text-neutral-900">Muhammad Saqib</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-neutral-400 block font-bold uppercase">Phone Number</span>
+                    <span className="font-semibold text-neutral-900">03491905800</span>
+                  </div>
+                  <div className="col-span-2">
+                    <span className="text-[10px] text-neutral-400 block font-bold uppercase">Notification Email</span>
+                    <span className="font-semibold text-[#0067b8]">sk8013908@gmail.com</span>
                   </div>
                 </div>
 

@@ -100,6 +100,7 @@ export interface ToastNotification {
 export interface UserProfile {
   name: string;
   email: string;
+  phone: string;
   avatar: string;
   rewardsPoints: number;
   tier: string;
@@ -115,6 +116,8 @@ export interface Order {
   total: number;
   shippingAddress: {
     fullName: string;
+    email: string;
+    phone: string;
     street: string;
     city: string;
     state: string;
@@ -123,4 +126,5 @@ export interface Order {
   paymentMethod: string;
   status: 'Processing' | 'Shipped' | 'Delivered';
   estimatedDelivery: string;
+  notificationEmail: string;
 }

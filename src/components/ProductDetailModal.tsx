@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   X, 
   Star, 
@@ -43,6 +43,17 @@ export const ProductDetailModal: React.FC = () => {
   );
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState<'features' | 'specs' | 'reviews' | 'included'>('features');
+
+  // Handle ESC key to close modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setSelectedProduct(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [setSelectedProduct]);
 
   // Interactive review form state
   const [newReviewAuthor, setNewReviewAuthor] = useState('');
@@ -170,6 +181,13 @@ export const ProductDetailModal: React.FC = () => {
                   src={images[activeImageIndex] || selectedProduct.image}
                   alt={selectedProduct.title}
                   className="w-full h-full object-cover transition-all duration-300"
+                  referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    const target = e.currentTarget;
+                    if (!target.src.includes('unsplash.com/photo-1611339555312-e607c8352fd7')) {
+                      target.src = 'https://images.unsplash.com/photo-1611339555312-e607c8352fd7?w=900&auto=format&fit=crop&q=80';
+                    }
+                  }}
                 />
                 {selectedProduct.badge && (
                   <span className="absolute top-2.5 left-2.5 bg-[#0067b8] text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-2xs uppercase tracking-wider">

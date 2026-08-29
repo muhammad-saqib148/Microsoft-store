@@ -793,9 +793,11 @@ export const sampleProducts: Product[] = [
     isFree: true,
     rating: 4.7,
     reviewCount: 42100,
-    image: 'https://images.unsplash.com/photo-1614680376593-902f749f7ffc?w=900&auto=format&fit=crop&q=80',
+    image: 'https://images.unsplash.com/photo-1611339555312-e607c8352fd7?w=900&auto=format&fit=crop&q=80',
     galleryImages: [
-      'https://images.unsplash.com/photo-1614680376593-902f749f7ffc?w=900&auto=format&fit=crop&q=80'
+      'https://images.unsplash.com/photo-1611339555312-e607c8352fd7?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=900&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=900&auto=format&fit=crop&q=80'
     ],
     badge: 'Free Download',
     developer: 'Spotify AB',

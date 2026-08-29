@@ -17,7 +17,12 @@ import {
   LayoutGrid,
   Laptop,
   Headphones,
-  Film
+  Film,
+  Phone,
+  Mail,
+  UserCheck,
+  ShieldCheck,
+  ZoomIn
 } from 'lucide-react';
 import { MicrosoftLogo } from './MicrosoftLogo';
 import { useStore } from '../context/StoreContext';
@@ -41,9 +46,11 @@ export const Navbar: React.FC = () => {
   const [searchOpen, setSearchOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
   const [searchInput, setSearchInput] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const searchContainerRef = useRef<HTMLDivElement>(null);
+  const accountMenuRef = useRef<HTMLDivElement>(null);
 
   const navLinks: { id: ProductCategory; label: string; icon: React.ReactNode }[] = [
     { id: 'all', label: 'All Products', icon: <LayoutGrid className="w-4 h-4" /> },
@@ -98,6 +105,34 @@ export const Navbar: React.FC = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Close account menu on outside click or escape key
+  useEffect(() => {
+    const handleAccountClickOutside = (event: MouseEvent | TouchEvent) => {
+      if (accountMenuRef.current && !accountMenuRef.current.contains(event.target as Node)) {
+        setAccountMenuOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setAccountMenuOpen(false);
+        setIsPhotoModalOpen(false);
+      }
+    };
+
+    if (accountMenuOpen) {
+      document.addEventListener('mousedown', handleAccountClickOutside);
+      document.addEventListener('touchstart', handleAccountClickOutside);
+    }
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('mousedown', handleAccountClickOutside);
+      document.removeEventListener('touchstart', handleAccountClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [accountMenuOpen]);
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-neutral-200 shadow-2xs transition-all">
@@ -324,18 +359,22 @@ export const Navbar: React.FC = () => {
             </button>
 
             {/* User Account / Profile */}
-            <div className="relative">
+            <div className="relative" ref={accountMenuRef}>
               <button
                 id="user-profile-menu-button"
                 onClick={() => setAccountMenuOpen(!accountMenuOpen)}
                 className="flex items-center gap-1.5 p-1 rounded-md hover:bg-neutral-100 transition-colors focus:outline-hidden cursor-pointer border border-transparent hover:border-neutral-200"
                 aria-label="Account Settings"
+                title="Account Settings & Profile"
               >
-                <img
-                  src={user.avatar}
-                  alt={user.name}
-                  className="w-6 h-6 rounded-full object-cover ring-1 ring-neutral-300"
-                />
+                <div className="relative group/avatar">
+                  <img
+                    src={user.avatar}
+                    alt={user.name}
+                    className="w-6 h-6 rounded-full object-cover ring-1 ring-neutral-300 group-hover/avatar:ring-[#0067b8]"
+                  />
+                  <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-emerald-500 rounded-full ring-1 ring-white" />
+                </div>
                 <ChevronDown className="w-3 h-3 text-neutral-500 hidden sm:block" />
               </button>
 
@@ -343,19 +382,47 @@ export const Navbar: React.FC = () => {
               {accountMenuOpen && (
                 <div 
                   id="user-account-dropdown"
-                  className="absolute right-0 mt-1.5 w-60 bg-white rounded-xl shadow-lg border border-neutral-200 p-3 z-50 animate-in fade-in duration-150"
+                  className="absolute right-0 mt-1.5 w-64 bg-white rounded-xl shadow-xl border border-neutral-200 p-3.5 z-50 animate-in fade-in duration-150 text-left"
                 >
-                  <div className="flex items-center gap-2.5 pb-2.5 border-b border-neutral-100">
-                    <img
-                      src={user.avatar}
-                      alt={user.name}
-                      className="w-9 h-9 rounded-full object-cover ring-1 ring-[#0067b8]/30"
-                    />
-                    <div className="min-w-0">
-                      <p className="text-xs font-bold text-neutral-900 truncate">{user.name}</p>
-                      <p className="text-[11px] text-neutral-500 truncate">{user.email}</p>
+                  <div className="flex items-center gap-2.5 pb-3 border-b border-neutral-100">
+                    <button
+                      onClick={() => {
+                        setIsPhotoModalOpen(true);
+                        setAccountMenuOpen(false);
+                      }}
+                      className="relative group cursor-pointer shrink-0 rounded-full focus:outline-hidden"
+                      title="Click to view full photo"
+                    >
+                      <img
+                        src={user.avatar}
+                        alt={user.name}
+                        className="w-11 h-11 rounded-full object-cover ring-2 ring-[#0067b8]/30 group-hover:ring-[#0067b8] transition-all"
+                      />
+                      <div className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity">
+                        <ZoomIn className="w-4 h-4" />
+                      </div>
+                    </button>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1">
+                        <p className="text-xs font-bold text-neutral-900 truncate">{user.name}</p>
+                        <UserCheck className="w-3.5 h-3.5 text-[#0067b8] shrink-0" />
+                      </div>
+                      <p className="text-[10px] font-medium text-neutral-500 truncate">{user.email}</p>
+                      <p className="text-[10px] text-[#0067b8] font-bold mt-0.5">{user.phone}</p>
                     </div>
                   </div>
+
+                  {/* View Full Profile Picture button */}
+                  <button
+                    onClick={() => {
+                      setIsPhotoModalOpen(true);
+                      setAccountMenuOpen(false);
+                    }}
+                    className="w-full mt-2 py-1 px-2 text-[11px] font-semibold text-[#0067b8] bg-sky-50 hover:bg-sky-100 rounded-md border border-sky-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <ZoomIn className="w-3.5 h-3.5" />
+                    <span>View Profile Picture</span>
+                  </button>
 
                   {/* Rewards Widget */}
                   <div className="mt-2.5 p-2 rounded-lg bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200">
@@ -392,10 +459,12 @@ export const Navbar: React.FC = () => {
                     </button>
                   </div>
 
-                  <div className="mt-2 pt-2 border-t border-neutral-100">
-                    <p className="text-[10px] text-neutral-400 text-center">
-                      Microsoft Account Connected
-                    </p>
+                  <div className="mt-2 pt-2 border-t border-neutral-100 flex items-center justify-between text-[10px] text-neutral-500">
+                    <span className="flex items-center gap-1 text-emerald-600 font-semibold">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                      Verified
+                    </span>
+                    <span>Account Active</span>
                   </div>
                 </div>
               )}
@@ -497,6 +566,95 @@ export const Navbar: React.FC = () => {
             </div>
           </div>
           <div className="flex-1" onClick={() => setMobileMenuOpen(false)} />
+        </div>
+      )}
+      {/* Full Photo Lightbox Modal - Opens on click, dismisses when clicking anywhere outside */}
+      {isPhotoModalOpen && (
+        <div 
+          id="profile-photo-lightbox-modal"
+          className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200"
+          onClick={() => setIsPhotoModalOpen(false)}
+        >
+          <div 
+            className="bg-white rounded-2xl max-w-sm sm:max-w-md w-full overflow-hidden shadow-2xl border border-neutral-200 relative animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Top Bar with Title and Close Button */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-100 bg-neutral-50/80">
+              <div className="flex items-center gap-2">
+                <UserCheck className="w-4 h-4 text-[#0067b8]" />
+                <span className="text-xs font-bold text-neutral-900">Verified Profile Picture</span>
+              </div>
+              <button
+                onClick={() => setIsPhotoModalOpen(false)}
+                className="p-1 rounded-full text-neutral-400 hover:text-neutral-700 hover:bg-neutral-200/60 transition-colors cursor-pointer"
+                aria-label="Close photo preview"
+                title="Close (Esc)"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Photo View Container */}
+            <div className="p-4 sm:p-5 flex flex-col items-center text-center">
+              <div className="relative w-52 h-52 sm:w-60 sm:h-60 rounded-2xl overflow-hidden shadow-lg border-2 border-white ring-2 ring-[#0067b8]/40 bg-neutral-100 group">
+                <img
+                  src={user.avatar}
+                  alt={user.name}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute bottom-2 right-2 bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                  Active Owner
+                </div>
+              </div>
+
+              {/* User Bio Details */}
+              <div className="mt-4 w-full">
+                <div className="flex items-center justify-center gap-1.5">
+                  <h3 className="text-lg font-extrabold text-neutral-900">{user.name}</h3>
+                  <span className="bg-sky-100 text-[#0067b8] text-[10px] font-bold px-2 py-0.5 rounded-full border border-sky-200">
+                    Admin
+                  </span>
+                </div>
+                <p className="text-xs text-neutral-500 font-medium mt-0.5">{user.tier}</p>
+
+                {/* Contact cards */}
+                <div className="mt-3.5 grid grid-cols-2 gap-2 text-left text-xs bg-neutral-50 p-3 rounded-xl border border-neutral-200">
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-neutral-400 block">Phone / WhatsApp</span>
+                    <a 
+                      href={`tel:${user.phone}`} 
+                      className="font-bold text-neutral-900 hover:text-[#0067b8] transition-colors flex items-center gap-1 mt-0.5"
+                    >
+                      <Phone className="w-3 h-3 text-emerald-600 shrink-0" />
+                      <span className="truncate">{user.phone}</span>
+                    </a>
+                  </div>
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-neutral-400 block">Email Address</span>
+                    <a 
+                      href={`mailto:${user.email}`} 
+                      className="font-bold text-[#0067b8] hover:underline transition-colors flex items-center gap-1 mt-0.5 truncate"
+                    >
+                      <Mail className="w-3 h-3 text-[#0067b8] shrink-0" />
+                      <span className="truncate">{user.email}</span>
+                    </a>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex items-center justify-end gap-2 pt-2 border-t border-neutral-100 text-xs">
+                  <span className="text-[11px] text-neutral-400 mr-auto">Click anywhere outside to close</span>
+                  <button
+                    onClick={() => setIsPhotoModalOpen(false)}
+                    className="px-4 py-1.5 bg-[#0067b8] hover:bg-[#005da6] text-white font-semibold rounded-lg shadow-2xs transition-colors cursor-pointer"
+                  >
+                    Close Preview
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </header>

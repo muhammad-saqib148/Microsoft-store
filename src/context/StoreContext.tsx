@@ -131,9 +131,10 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   // User Profile
   const [user, setUser] = useState<UserProfile>({
-    name: 'Alex Mercer',
-    email: 'alex.mercer@outlook.com',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
+    name: 'Muhammad Saqib',
+    email: 'sk8013908@gmail.com',
+    phone: '03491905800',
+    avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=600&auto=format&fit=crop&q=80',
     rewardsPoints: 4250,
     tier: 'Level 2 Microsoft Rewards'
   });
@@ -350,10 +351,19 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       tax: cartSubtotal * 0.0825,
       discount: promoDiscount < 1 ? cartSubtotal * promoDiscount : promoDiscount,
       total: cartTotal,
-      shippingAddress: shippingInfo,
+      shippingAddress: {
+        fullName: shippingInfo.fullName || 'Muhammad Saqib',
+        email: shippingInfo.email || 'sk8013908@gmail.com',
+        phone: shippingInfo.phone || '03491905800',
+        street: shippingInfo.street || 'One Microsoft Way',
+        city: shippingInfo.city || 'Redmond',
+        state: shippingInfo.state || 'WA',
+        zip: shippingInfo.zip || '98052'
+      },
       paymentMethod,
       status: 'Processing',
-      estimatedDelivery: '3-5 Business Days (Free Standard Delivery)'
+      estimatedDelivery: '3-5 Business Days (Free Standard Delivery)',
+      notificationEmail: 'sk8013908@gmail.com'
     };
 
     setOrders(prev => [newOrder, ...prev]);
@@ -368,8 +378,8 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
     clearCart();
     addToast(
-      'Order Confirmed!',
-      `Order #${orderId} was placed successfully! You earned +${earnedPoints} Microsoft Rewards points.`,
+      'Order Confirmed & Email Dispatched!',
+      `Order #${orderId} confirmed! Instant purchase notification sent to sk8013908@gmail.com. Phone: 03491905800.`,
       'success'
     );
     return newOrder;
