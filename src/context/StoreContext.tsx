@@ -143,7 +143,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       name: 'Muhammad Saqib',
       email: 'sk8013908@gmail.com',
       phone: '03491905800',
-      avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=600&auto=format&fit=crop&q=80',
+      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80',
       rewardsPoints: 4250,
       tier: 'Level 2 Microsoft Rewards'
     };
