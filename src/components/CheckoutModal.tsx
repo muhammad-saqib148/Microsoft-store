@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   X, 
@@ -17,11 +17,16 @@ import {
   Mail,
   Phone,
   ExternalLink,
-  ChevronLeft
+  ChevronLeft,
+  MapPin,
+  ChevronDown,
+  Search,
+  Building2
 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { Order } from '../types';
 import { MicrosoftLogo } from './MicrosoftLogo';
+import { CITIES_DATABASE, searchCities, findCityData, getPopularCities, CityData } from '../data/citiesData';
 
 export const CheckoutModal: React.FC = () => {
   const {
@@ -48,6 +53,58 @@ export const CheckoutModal: React.FC = () => {
     state: 'Punjab',
     zip: '54000'
   });
+
+  // City Autocomplete & Auto-populate state
+  const [isCityDropdownOpen, setIsCityDropdownOpen] = useState(false);
+  const [citySearchQuery, setCitySearchQuery] = useState(shippingInfo.city);
+  const [autoFilledNotice, setAutoFilledNotice] = useState<string | null>('✓ Auto-filled: Punjab & Postal Code 54000');
+  const cityDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (cityDropdownRef.current && !cityDropdownRef.current.contains(e.target as Node)) {
+        setIsCityDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const popularCities = getPopularCities().slice(0, 8);
+  const filteredCityList = searchCities(citySearchQuery);
+
+  const handleSelectCity = (c: CityData) => {
+    setShippingInfo(prev => ({
+      ...prev,
+      city: c.city,
+      state: c.state,
+      zip: c.zip
+    }));
+    setCitySearchQuery(c.city);
+    setAutoFilledNotice(`✓ Auto-filled: ${c.state} & Postal Code ${c.zip}`);
+    setIsCityDropdownOpen(false);
+  };
+
+  const handleCityInput = (val: string) => {
+    setCitySearchQuery(val);
+    setIsCityDropdownOpen(true);
+    
+    // Check if entered text matches a known city
+    const matched = findCityData(val);
+    if (matched) {
+      setShippingInfo(prev => ({
+        ...prev,
+        city: matched.city,
+        state: matched.state,
+        zip: matched.zip
+      }));
+      setAutoFilledNotice(`✓ Auto-filled: ${matched.state} & Postal Code ${matched.zip}`);
+    } else {
+      setShippingInfo(prev => ({ ...prev, city: val }));
+      setAutoFilledNotice(null);
+    }
+  };
 
   const [deliveryOption, setDeliveryOption] = useState<'standard' | 'priority'>('standard');
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'mspay' | 'paypal'>('mspay');
@@ -195,30 +252,124 @@ export const CheckoutModal: React.FC = () => {
                   <input
                     type="text"
                     required
+                    placeholder="House / Flat No., Street, Area"
                     value={shippingInfo.street}
                     onChange={(e) => setShippingInfo({ ...shippingInfo, street: e.target.value })}
                     className="w-full px-3 py-2 text-xs bg-neutral-50 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-xl outline-hidden focus:ring-2 focus:ring-[#0067b8]"
                   />
                 </div>
-                <div>
-                  <label className="text-[11px] font-bold text-neutral-700 dark:text-neutral-300 block mb-1">City</label>
-                  <input
-                    type="text"
-                    required
-                    value={shippingInfo.city}
-                    onChange={(e) => setShippingInfo({ ...shippingInfo, city: e.target.value })}
-                    className="w-full px-3 py-2 text-xs bg-neutral-50 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-xl outline-hidden focus:ring-2 focus:ring-[#0067b8]"
-                  />
+
+                {/* Popular City Quick-Select Chips */}
+                <div className="sm:col-span-2">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 flex items-center gap-1">
+                      <MapPin className="w-3 h-3 text-[#0067b8] dark:text-[#60cdff]" />
+                      Quick Popular Cities (1-Click Auto-Fill Province & Postal Code):
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {popularCities.map((c) => {
+                      const isSelected = shippingInfo.city.toLowerCase() === c.city.toLowerCase();
+                      return (
+                        <button
+                          key={c.city}
+                          type="button"
+                          onClick={() => handleSelectCity(c)}
+                          className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                            isSelected
+                              ? 'bg-[#0067b8] dark:bg-[#0078d4] text-white shadow-xs'
+                              : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700 border border-neutral-200 dark:border-neutral-700'
+                          }`}
+                        >
+                          <span>{c.city}</span>
+                          {isSelected && <Check className="w-3 h-3 text-white" />}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
+
+                {/* Smart City Selection with Searchable Autocomplete */}
+                <div className="relative" ref={cityDropdownRef}>
+                  <label className="text-[11px] font-bold text-neutral-700 dark:text-neutral-300 block mb-1">
+                    City <span className="text-[#0067b8] dark:text-[#60cdff] text-[10px] font-normal">(Auto-fills Province & Postal Code)</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      required
+                      placeholder="Type or select city (e.g. Lahore, Karachi, Islamabad)..."
+                      value={citySearchQuery}
+                      onChange={(e) => handleCityInput(e.target.value)}
+                      onFocus={() => setIsCityDropdownOpen(true)}
+                      className="w-full pl-8 pr-8 py-2 text-xs bg-neutral-50 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-xl outline-hidden focus:ring-2 focus:ring-[#0067b8] font-medium"
+                    />
+                    <Building2 className="w-3.5 h-3.5 text-neutral-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <button
+                      type="button"
+                      onClick={() => setIsCityDropdownOpen(!isCityDropdownOpen)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 dark:hover:text-white cursor-pointer"
+                    >
+                      <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isCityDropdownOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                  </div>
+
+                  {/* Autocomplete Dropdown List */}
+                  <AnimatePresence>
+                    {isCityDropdownOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -4 }}
+                        className="absolute left-0 right-0 top-full mt-1 z-30 bg-white dark:bg-[#252525] border border-neutral-300 dark:border-neutral-700 rounded-xl shadow-xl max-h-56 overflow-y-auto"
+                      >
+                        <div className="p-1.5 text-[10px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider px-2 border-b border-neutral-100 dark:border-neutral-800">
+                          {filteredCityList.length} Cities Available (Select to auto-fill)
+                        </div>
+                        {filteredCityList.length > 0 ? (
+                          filteredCityList.map((c) => (
+                            <button
+                              key={`${c.city}-${c.zip}`}
+                              type="button"
+                              onClick={() => handleSelectCity(c)}
+                              className="w-full text-left px-3 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center justify-between text-xs transition-colors border-b border-neutral-50 dark:border-neutral-800/40 last:border-0 cursor-pointer"
+                            >
+                              <div>
+                                <span className="font-bold text-neutral-900 dark:text-white">{c.city}</span>
+                                <span className="text-[11px] text-neutral-500 dark:text-neutral-400 ml-1.5">
+                                  ({c.state})
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[10px] font-mono bg-sky-100 dark:bg-sky-950/80 text-[#0067b8] dark:text-[#60cdff] px-1.5 py-0.5 rounded font-bold">
+                                  {c.zip}
+                                </span>
+                                <span className="text-[10px] text-neutral-400">
+                                  {c.country}
+                                </span>
+                              </div>
+                            </button>
+                          ))
+                        ) : (
+                          <div className="p-3 text-center text-xs text-neutral-500">
+                            No matching city found. You can enter manually below.
+                          </div>
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <label className="text-[11px] font-bold text-neutral-700 dark:text-neutral-300 block mb-1">State / Province</label>
                     <input
                       type="text"
                       required
+                      placeholder="e.g. Punjab"
                       value={shippingInfo.state}
                       onChange={(e) => setShippingInfo({ ...shippingInfo, state: e.target.value })}
-                      className="w-full px-3 py-2 text-xs bg-neutral-50 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-xl outline-hidden focus:ring-2 focus:ring-[#0067b8]"
+                      className="w-full px-3 py-2 text-xs bg-neutral-50 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-xl outline-hidden focus:ring-2 focus:ring-[#0067b8] font-medium"
                     />
                   </div>
                   <div>
@@ -226,12 +377,23 @@ export const CheckoutModal: React.FC = () => {
                     <input
                       type="text"
                       required
+                      placeholder="e.g. 54000"
                       value={shippingInfo.zip}
                       onChange={(e) => setShippingInfo({ ...shippingInfo, zip: e.target.value })}
-                      className="w-full px-3 py-2 text-xs bg-neutral-50 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-xl outline-hidden focus:ring-2 focus:ring-[#0067b8]"
+                      className="w-full px-3 py-2 text-xs bg-neutral-50 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-xl outline-hidden focus:ring-2 focus:ring-[#0067b8] font-mono font-medium"
                     />
                   </div>
                 </div>
+
+                {/* Auto-filled Feedback Badge */}
+                {autoFilledNotice && (
+                  <div className="sm:col-span-2">
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800/60 rounded-lg text-[11px] font-bold text-emerald-700 dark:text-emerald-400 animate-in fade-in">
+                      <Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                      <span>{autoFilledNotice}</span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Delivery Speed Card Selection */}
