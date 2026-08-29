@@ -467,14 +467,14 @@ export const CheckoutModal: React.FC = () => {
                   Payment Verified & Order Confirmed
                 </span>
                 <h2 className="text-xl sm:text-2xl font-extrabold text-neutral-900 mt-2">
-                  Thank you for your order, Muhammad Saqib!
+                  Thank you for your order, {confirmedOrder.shippingAddress.fullName}!
                 </h2>
                 <p className="text-xs text-neutral-600 mt-1">
                   Your purchase was completed successfully. Order details & digital license keys have been dispatched.
                 </p>
               </div>
 
-              {/* Notification Banner to sk8013908@gmail.com & 03491905800 */}
+              {/* Notification Banner to sk8013908@gmail.com & Customer details */}
               <div className="max-w-lg mx-auto bg-gradient-to-r from-sky-50 to-indigo-50 border border-sky-200 rounded-xl p-3.5 text-left shadow-2xs space-y-2">
                 <div className="flex items-start gap-2.5">
                   <div className="w-8 h-8 rounded-lg bg-[#0067b8] text-white flex items-center justify-center shrink-0">
@@ -482,24 +482,24 @@ export const CheckoutModal: React.FC = () => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-1">
-                      <h4 className="text-xs font-bold text-[#0067b8]">Instant Email Notification Sent</h4>
+                      <h4 className="text-xs font-bold text-[#0067b8]">Microsoft Store Instant Email Notification</h4>
                       <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded">
                         DISPATCHED
                       </span>
                     </div>
                     <p className="text-xs font-semibold text-neutral-900 mt-0.5">
-                      Recipient: <span className="font-mono text-[#0067b8]">sk8013908@gmail.com</span>
+                      Store Admin & Notification Email: <span className="font-mono text-[#0067b8]">sk8013908@gmail.com</span>
                     </p>
                     <p className="text-[11px] text-neutral-600 mt-0.5">
-                      Customer: <strong>Muhammad Saqib</strong> • Phone / WhatsApp: <strong className="text-neutral-800">03491905800</strong>
+                      Customer: <strong>{confirmedOrder.shippingAddress.fullName}</strong> • Phone: <strong className="text-neutral-800">{confirmedOrder.shippingAddress.phone}</strong> • Customer Email: <strong className="text-neutral-800">{confirmedOrder.shippingAddress.email}</strong>
                     </p>
                   </div>
                 </div>
 
                 <div className="pt-2 border-t border-sky-200/80 flex flex-wrap items-center justify-between gap-2 text-[11px]">
-                  <span className="text-neutral-500">Subject: Order Confirmation #{confirmedOrder.id}</span>
+                  <span className="text-neutral-500">Subject: [Microsoft Store] New Order #{confirmedOrder.id} - {confirmedOrder.shippingAddress.fullName}</span>
                   <a
-                    href={`mailto:sk8013908@gmail.com?subject=${encodeURIComponent(`[Microsoft Store] Order Confirmation #${confirmedOrder.id} - Muhammad Saqib`)}&body=${encodeURIComponent(`Dear Muhammad Saqib,\n\nYour order #${confirmedOrder.id} has been processed successfully!\n\nCustomer: Muhammad Saqib\nContact Number: 03491905800\nNotification Email: sk8013908@gmail.com\nOrder Total: $${confirmedOrder.total.toFixed(2)}\n\nThank you for shopping with Microsoft Store!`)}`}
+                    href={`mailto:sk8013908@gmail.com?subject=${encodeURIComponent(`[Microsoft Store Order Notification] #${confirmedOrder.id} - ${confirmedOrder.shippingAddress.fullName}`)}&body=${encodeURIComponent(`Microsoft Store Order Notification\n===============================\nOrder ID: #${confirmedOrder.id}\nDate: ${confirmedOrder.date}\n\nCustomer Details from Form:\n- Full Name: ${confirmedOrder.shippingAddress.fullName}\n- Phone Number: ${confirmedOrder.shippingAddress.phone}\n- Customer Email: ${confirmedOrder.shippingAddress.email}\n- Shipping Address: ${confirmedOrder.shippingAddress.street}, ${confirmedOrder.shippingAddress.city}, ${confirmedOrder.shippingAddress.state} ${confirmedOrder.shippingAddress.zip}\n\nOrder Items:\n${confirmedOrder.items.map(it => `• ${it.product.title} (Qty: ${it.quantity}) - $${((it.product.price + (it.selectedStorage?.priceDelta || 0)) * it.quantity).toFixed(2)}`).join('\n')}\n\nOrder Summary:\n- Subtotal: $${confirmedOrder.subtotal.toFixed(2)}\n- Total Paid: $${confirmedOrder.total.toFixed(2)}\n- Payment Method: ${confirmedOrder.paymentMethod}\n- Status: ${confirmedOrder.status}\n\nMicrosoft Store Notification Service\nAdmin: sk8013908@gmail.com\nPhone: 03491905800`)}`}
                     className="inline-flex items-center gap-1 font-bold text-[#0067b8] hover:underline cursor-pointer"
                   >
                     <span>Open in Gmail / Mail App</span>
@@ -535,19 +535,27 @@ export const CheckoutModal: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Customer Contact Details */}
-                <div className="pt-2 border-t border-neutral-200 grid grid-cols-2 gap-2 text-[11px] text-neutral-600 bg-white p-2 rounded-lg border border-neutral-200">
+                {/* Customer Contact Details from Form */}
+                <div className="pt-2 border-t border-neutral-200 grid grid-cols-2 gap-2 text-[11px] text-neutral-600 bg-white p-2.5 rounded-lg border border-neutral-200">
                   <div>
-                    <span className="text-[10px] text-neutral-400 block font-bold uppercase">Customer</span>
-                    <span className="font-semibold text-neutral-900">Muhammad Saqib</span>
+                    <span className="text-[10px] text-neutral-400 block font-bold uppercase">Customer Name</span>
+                    <span className="font-semibold text-neutral-900">{confirmedOrder.shippingAddress.fullName}</span>
                   </div>
                   <div>
                     <span className="text-[10px] text-neutral-400 block font-bold uppercase">Phone Number</span>
-                    <span className="font-semibold text-neutral-900">03491905800</span>
+                    <span className="font-semibold text-neutral-900">{confirmedOrder.shippingAddress.phone}</span>
                   </div>
-                  <div className="col-span-2">
-                    <span className="text-[10px] text-neutral-400 block font-bold uppercase">Notification Email</span>
-                    <span className="font-semibold text-[#0067b8]">sk8013908@gmail.com</span>
+                  <div>
+                    <span className="text-[10px] text-neutral-400 block font-bold uppercase">Customer Email</span>
+                    <span className="font-semibold text-[#0067b8] truncate block">{confirmedOrder.shippingAddress.email}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-neutral-400 block font-bold uppercase">Admin Notification</span>
+                    <span className="font-semibold text-emerald-700">sk8013908@gmail.com</span>
+                  </div>
+                  <div className="col-span-2 pt-1 border-t border-neutral-100">
+                    <span className="text-[10px] text-neutral-400 block font-bold uppercase">Delivery Address</span>
+                    <span className="font-medium text-neutral-800">{confirmedOrder.shippingAddress.street}, {confirmedOrder.shippingAddress.city}, {confirmedOrder.shippingAddress.state} {confirmedOrder.shippingAddress.zip}</span>
                   </div>
                 </div>
 

@@ -13,6 +13,7 @@ import { CheckoutModal } from './components/CheckoutModal';
 import { WishlistModal } from './components/WishlistModal';
 import { ToastContainer } from './components/ToastContainer';
 import { Footer } from './components/Footer';
+import { CustomCursor } from './components/CustomCursor';
 
 const StoreContent: React.FC = () => {
   const { products, activeCategory } = useStore();
@@ -110,6 +111,7 @@ const StoreContent: React.FC = () => {
       <CheckoutModal />
       <WishlistModal />
       <ToastContainer />
+      <CustomCursor />
     </div>
   );
 };

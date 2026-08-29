@@ -373,14 +373,14 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         fullName: shippingInfo.fullName || 'Muhammad Saqib',
         email: shippingInfo.email || 'sk8013908@gmail.com',
         phone: shippingInfo.phone || '03491905800',
-        street: shippingInfo.street || 'One Microsoft Way',
-        city: shippingInfo.city || 'Redmond',
-        state: shippingInfo.state || 'WA',
-        zip: shippingInfo.zip || '98052'
+        street: shippingInfo.street || '123 Innovation Boulevard',
+        city: shippingInfo.city || 'Lahore',
+        state: shippingInfo.state || 'Punjab',
+        zip: shippingInfo.zip || '54000'
       },
       paymentMethod,
       status: 'Processing',
-      estimatedDelivery: '3-5 Business Days (Free Standard Delivery)',
+      estimatedDelivery: '2-3 Business Days (Microsoft Express Delivery)',
       notificationEmail: 'sk8013908@gmail.com'
     };
 
@@ -397,7 +397,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     clearCart();
     addToast(
       'Order Confirmed & Email Dispatched!',
-      `Order #${orderId} confirmed! Instant purchase notification sent to sk8013908@gmail.com. Phone: 03491905800.`,
+      `Order #${orderId} for ${newOrder.shippingAddress.fullName} (${newOrder.shippingAddress.phone}) has been processed! Notification sent to sk8013908@gmail.com from Microsoft Store.`,
       'success'
     );
     return newOrder;
