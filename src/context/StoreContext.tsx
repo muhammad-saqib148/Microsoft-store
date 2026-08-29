@@ -130,16 +130,34 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [toasts, setToasts] = useState<ToastNotification[]>([]);
 
   // User Profile
-  const [user, setUser] = useState<UserProfile>({
-    name: 'Muhammad Saqib',
-    email: 'sk8013908@gmail.com',
-    phone: '03491905800',
-    avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=600&auto=format&fit=crop&q=80',
-    rewardsPoints: 4250,
-    tier: 'Level 2 Microsoft Rewards'
+  const [user, setUser] = useState<UserProfile>(() => {
+    try {
+      const savedUser = localStorage.getItem('ms_store_user_profile');
+      if (savedUser) {
+        return JSON.parse(savedUser);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    return {
+      name: 'Muhammad Saqib',
+      email: 'sk8013908@gmail.com',
+      phone: '03491905800',
+      avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=600&auto=format&fit=crop&q=80',
+      rewardsPoints: 4250,
+      tier: 'Level 2 Microsoft Rewards'
+    };
   });
 
   // Sync state to local storage
+  useEffect(() => {
+    try {
+      localStorage.setItem('ms_store_user_profile', JSON.stringify(user));
+    } catch (e) {
+      console.error(e);
+    }
+  }, [user]);
+
   useEffect(() => {
     try {
       localStorage.setItem('ms_store_cart', JSON.stringify(cart));

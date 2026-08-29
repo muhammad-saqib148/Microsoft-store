@@ -22,7 +22,10 @@ import {
   Mail,
   UserCheck,
   ShieldCheck,
-  ZoomIn
+  ZoomIn,
+  Camera,
+  Upload,
+  Image as ImageIcon
 } from 'lucide-react';
 import { MicrosoftLogo } from './MicrosoftLogo';
 import { useStore } from '../context/StoreContext';
@@ -40,7 +43,9 @@ export const Navbar: React.FC = () => {
     setFilters,
     products,
     quickViewProduct,
-    user
+    user,
+    setUser,
+    addToast
   } = useStore();
 
   const [searchOpen, setSearchOpen] = useState(false);
@@ -51,6 +56,26 @@ export const Navbar: React.FC = () => {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const accountMenuRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) {
+        addToast('File too large', 'Please select an image smaller than 10MB', 'warning');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const result = event.target?.result as string;
+        if (result) {
+          setUser({ ...user, avatar: result });
+          addToast('Profile Photo Updated!', 'Your new portrait picture is now active across the entire store.', 'success');
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const navLinks: { id: ProductCategory; label: string; icon: React.ReactNode }[] = [
     { id: 'all', label: 'All Products', icon: <LayoutGrid className="w-4 h-4" /> },
@@ -412,17 +437,28 @@ export const Navbar: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* View Full Profile Picture button */}
-                  <button
-                    onClick={() => {
-                      setIsPhotoModalOpen(true);
-                      setAccountMenuOpen(false);
-                    }}
-                    className="w-full mt-2 py-1 px-2 text-[11px] font-semibold text-[#0067b8] bg-sky-50 hover:bg-sky-100 rounded-md border border-sky-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-                  >
-                    <ZoomIn className="w-3.5 h-3.5" />
-                    <span>View Profile Picture</span>
-                  </button>
+                  {/* View Full Profile Picture & Upload Buttons */}
+                  <div className="grid grid-cols-2 gap-1.5 mt-2">
+                    <button
+                      onClick={() => {
+                        setIsPhotoModalOpen(true);
+                        setAccountMenuOpen(false);
+                      }}
+                      className="py-1.5 px-2 text-[11px] font-semibold text-[#0067b8] bg-sky-50 hover:bg-sky-100 rounded-md border border-sky-200 transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                    >
+                      <ZoomIn className="w-3.5 h-3.5" />
+                      <span>View Photo</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        fileInputRef.current?.click();
+                      }}
+                      className="py-1.5 px-2 text-[11px] font-semibold text-neutral-700 bg-neutral-100 hover:bg-neutral-200 rounded-md border border-neutral-200 transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                    >
+                      <Upload className="w-3.5 h-3.5 text-neutral-600" />
+                      <span>Upload Pic</span>
+                    </button>
+                  </div>
 
                   {/* Rewards Widget */}
                   <div className="mt-2.5 p-2 rounded-lg bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200">
@@ -568,49 +604,91 @@ export const Navbar: React.FC = () => {
           <div className="flex-1" onClick={() => setMobileMenuOpen(false)} />
         </div>
       )}
+      {/* Hidden file input for uploading profile picture */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handlePhotoUpload}
+        accept="image/*"
+        className="hidden"
+        id="profile-avatar-file-input"
+      />
+
       {/* Full Photo Lightbox Modal - Opens on click, dismisses when clicking anywhere outside */}
       {isPhotoModalOpen && (
         <div 
           id="profile-photo-lightbox-modal"
-          className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200"
+          className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-y-auto animate-in fade-in duration-200"
           onClick={() => setIsPhotoModalOpen(false)}
         >
           <div 
-            className="bg-white rounded-2xl max-w-sm sm:max-w-md w-full overflow-hidden shadow-2xl border border-neutral-200 relative animate-in zoom-in-95 duration-200"
+            className="bg-white rounded-2xl max-w-sm sm:max-w-md w-full my-auto overflow-hidden shadow-2xl border border-neutral-200 relative animate-in zoom-in-95 duration-200 max-h-[92vh] flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Top Bar with Title and Close Button */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-100 bg-neutral-50/80">
+            {/* Top Bar with Title, Upload & Close Button */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-100 bg-neutral-50/90 shrink-0">
               <div className="flex items-center gap-2">
                 <UserCheck className="w-4 h-4 text-[#0067b8]" />
-                <span className="text-xs font-bold text-neutral-900">Verified Profile Picture</span>
+                <span className="text-xs font-bold text-neutral-900">Muhammad Saqib Profile</span>
               </div>
-              <button
-                onClick={() => setIsPhotoModalOpen(false)}
-                className="p-1 rounded-full text-neutral-400 hover:text-neutral-700 hover:bg-neutral-200/60 transition-colors cursor-pointer"
-                aria-label="Close photo preview"
-                title="Close (Esc)"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="text-xs font-semibold text-[#0067b8] hover:text-[#005da6] bg-sky-50 hover:bg-sky-100 px-2 py-1 rounded-md border border-sky-200 transition-colors flex items-center gap-1 cursor-pointer"
+                  title="Upload picture from computer or phone"
+                >
+                  <Upload className="w-3 h-3" />
+                  <span>Upload Pic</span>
+                </button>
+                <button
+                  onClick={() => setIsPhotoModalOpen(false)}
+                  className="p-1 rounded-full text-neutral-400 hover:text-neutral-700 hover:bg-neutral-200/60 transition-colors cursor-pointer"
+                  aria-label="Close photo preview"
+                  title="Close (Esc)"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
-            {/* Photo View Container */}
-            <div className="p-4 sm:p-5 flex flex-col items-center text-center">
-              <div className="relative w-52 h-52 sm:w-60 sm:h-60 rounded-2xl overflow-hidden shadow-lg border-2 border-white ring-2 ring-[#0067b8]/40 bg-neutral-100 group">
+            {/* Photo View Container with scroll if needed */}
+            <div className="p-4 sm:p-5 flex flex-col items-center text-center overflow-y-auto">
+              <div className="relative w-56 h-72 sm:w-64 sm:h-80 rounded-2xl overflow-hidden shadow-lg border-2 border-white ring-2 ring-[#0067b8]/40 bg-neutral-900 group">
                 <img
                   src={user.avatar}
                   alt={user.name}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover object-top transition-transform duration-300 group-hover:scale-105"
                 />
-                <div className="absolute bottom-2 right-2 bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md flex items-center gap-1">
+                
+                {/* Overlay with Change Photo action */}
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1.5 text-white cursor-pointer"
+                  title="Click to choose a photo from your device"
+                >
+                  <Camera className="w-7 h-7" />
+                  <span className="text-xs font-semibold bg-black/60 px-3 py-1 rounded-full backdrop-blur-xs shadow-md">
+                    Change / Upload Photo
+                  </span>
+                </button>
+
+                <div className="absolute bottom-2.5 right-2.5 bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md flex items-center gap-1 pointer-events-none">
                   <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
                   Active Owner
                 </div>
               </div>
 
+              {/* Upload photo helper button */}
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="mt-3 w-full py-2 px-3 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 text-xs font-semibold rounded-xl border border-neutral-300 transition-colors flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <Upload className="w-3.5 h-3.5 text-[#0067b8]" />
+                <span>Upload Custom Photo (JPG / PNG)</span>
+              </button>
+
               {/* User Bio Details */}
-              <div className="mt-4 w-full">
+              <div className="mt-3.5 w-full">
                 <div className="flex items-center justify-center gap-1.5">
                   <h3 className="text-lg font-extrabold text-neutral-900">{user.name}</h3>
                   <span className="bg-sky-100 text-[#0067b8] text-[10px] font-bold px-2 py-0.5 rounded-full border border-sky-200">
@@ -620,7 +698,7 @@ export const Navbar: React.FC = () => {
                 <p className="text-xs text-neutral-500 font-medium mt-0.5">{user.tier}</p>
 
                 {/* Contact cards */}
-                <div className="mt-3.5 grid grid-cols-2 gap-2 text-left text-xs bg-neutral-50 p-3 rounded-xl border border-neutral-200">
+                <div className="mt-3 grid grid-cols-2 gap-2 text-left text-xs bg-neutral-50 p-2.5 rounded-xl border border-neutral-200">
                   <div>
                     <span className="text-[10px] uppercase font-bold text-neutral-400 block">Phone / WhatsApp</span>
                     <a 
@@ -643,8 +721,8 @@ export const Navbar: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="mt-4 flex items-center justify-end gap-2 pt-2 border-t border-neutral-100 text-xs">
-                  <span className="text-[11px] text-neutral-400 mr-auto">Click anywhere outside to close</span>
+                <div className="mt-3.5 flex items-center justify-between pt-2.5 border-t border-neutral-100 text-xs">
+                  <span className="text-[11px] text-neutral-400">Click outside to close</span>
                   <button
                     onClick={() => setIsPhotoModalOpen(false)}
                     className="px-4 py-1.5 bg-[#0067b8] hover:bg-[#005da6] text-white font-semibold rounded-lg shadow-2xs transition-colors cursor-pointer"
